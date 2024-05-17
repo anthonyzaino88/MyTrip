@@ -1,5 +1,9 @@
 // formHandler.js
 
+const AMADEUS_API_KEY = 'V0d0bW6lNEjP6sMxGZAjvb9hifr0ZoBk'; // Replace with your Amadeus API key
+const AMADEUS_API_SECRET = 'sSFQnKiQDxHa5cUB'; // Replace with your Amadeus API secret
+let amadeusAccessToken = '';
+
 const questions = [
     {
         question: "What type of vacation are you looking for?",
@@ -121,14 +125,38 @@ function loadQuestion() {
     }, 500);
 }
 
+async function getAmadeusAccessToken() {
+    try {
+        const response = await axios.post('https://test.api.amadeus.com/v1/security/oauth2/token', null, {
+            params: {
+                grant_type: 'client_credentials',
+                client_id: AMADEUS_API_KEY,
+                client_secret: AMADEUS_API_SECRET
+            },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+        return response.data.access_token;
+    } catch (error) {
+        console.error('Error fetching Amadeus access token:', error);
+    }
+}
+
 async function fetchDestinationSuggestions(formData) {
+    if (!amadeusAccessToken) {
+        amadeusAccessToken = await getAmadeusAccessToken();
+    }
+    
     try {
         const response = await axios.get('https://test.api.amadeus.com/v1/reference-data/locations', {
             params: {
                 subType: 'CITY',
                 keyword: formData['Do you have any preferred destinations?'] || '',
-                'page[limit]': 10,
-                apikey: 'V0d0bW6lNEjP6sMxGZAjvb9hifr0ZoBk' // Replace with your Amadeus API key
+                'page[limit]': 10
+            },
+            headers: {
+                Authorization: `Bearer ${amadeusAccessToken}`
             }
         });
 
@@ -159,6 +187,11 @@ async function submitForm() {
     console.log(formData); // For debugging
     const suggestions = await fetchDestinationSuggestions(formData);
     console.log('Destination Suggestions:', suggestions);
+
+    if (!suggestions || suggestions.length === 0) {
+        console.error('No destination suggestions found.');
+        return;
+    }
 
     // Filter and rank destinations based on user preferences
     const rankedDestinations = filterAndRankDestinations(suggestions, formData);
