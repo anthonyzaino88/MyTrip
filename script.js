@@ -4,6 +4,7 @@ const AMADEUS_API_KEY = 'V0d0bW6lNEjP6sMxGZAjvb9hifr0ZoBk'; // Replace with your
 const AMADEUS_API_SECRET = 'sSFQnKiQDxHa5cUB'; // Replace with your Amadeus API secret
 let amadeusAccessToken = '';
 
+
 const questions = [
     {
         question: "What type of vacation are you looking for?",
@@ -127,12 +128,12 @@ function loadQuestion() {
 
 async function getAmadeusAccessToken() {
     try {
-        const response = await axios.post('https://test.api.amadeus.com/v1/security/oauth2/token', null, {
-            params: {
-                grant_type: 'client_credentials',
-                client_id: AMADEUS_API_KEY,
-                client_secret: AMADEUS_API_SECRET
-            },
+        const params = new URLSearchParams();
+        params.append('grant_type', 'client_credentials');
+        params.append('client_id', AMADEUS_API_KEY);
+        params.append('client_secret', AMADEUS_API_SECRET);
+
+        const response = await axios.post('https://test.api.amadeus.com/v1/security/oauth2/token', params, {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
