@@ -39,6 +39,21 @@ const questions = [
         question: "Who are you traveling with?",
         type: "select",
         options: ["Solo", "Couple", "Family", "Friends"]
+    },
+    {
+        question: "Do you have kids traveling with you?",
+        type: "select",
+        options: ["Yes", "No"]
+    },
+    {
+        question: "If yes, what are their age ranges?",
+        type: "multi-select",
+        options: ["0-2", "3-5", "6-9", "10-12", "13-17"]
+    },
+    {
+        question: "Do you have pets traveling with you?",
+        type: "select",
+        options: ["Yes", "No"]
     }
 ];
 
@@ -85,6 +100,20 @@ function loadQuestion() {
             endDate.type = 'date';
             endDate.name = 'end-date';
             questionContainer.appendChild(endDate);
+        } else if (currentQuestion.type === 'multi-select') {
+            const checkboxes = document.createElement('div');
+            checkboxes.classList.add('multi-select');
+            currentQuestion.options.forEach(option => {
+                const checkboxLabel = document.createElement('label');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = option.toLowerCase();
+                checkbox.name = `${currentQuestionIndex}-${option.toLowerCase()}`;
+                checkboxLabel.appendChild(checkbox);
+                checkboxLabel.appendChild(document.createTextNode(option));
+                checkboxes.appendChild(checkboxLabel);
+            });
+            questionContainer.appendChild(checkboxes);
         }
     
         nextButton.style.display = 'block';
@@ -92,9 +121,27 @@ function loadQuestion() {
     }, 500);
 }
 
+async function fetchDestinationSuggestions(formData) {
+    try {
+        const response = await axios.get('https://test.api.amadeus.com/v1/reference-data/locations', {
+            params: {
+                subType: 'CITY',
+                keyword: formData['Do you have any preferred destinations?'] || '',
+                'page[limit]': 10,
+                apikey: 'V0d0bW6lNEjP6sMxGZAjvb9hifr0ZoBk' // Replace with your Amadeus API key
+            }
+        });
+
+        return response.data.data;
+    } catch (error) {
+        console.error('Error fetching destination suggestions:', error);
+    }
+}
+
 function handleNextButtonClick() {
     const currentQuestion = questions[currentQuestionIndex];
     const answer = document.querySelector(`[name="${currentQuestionIndex}"]`)?.value ||
+                   Array.from(document.querySelectorAll(`[name^="${currentQuestionIndex}-"]:checked`)).map(checkbox => checkbox.value) ||
                    { startDate: document.querySelector('[name="start-date"]')?.value,
                      endDate: document.querySelector('[name="end-date"]')?.value };
 
@@ -108,24 +155,42 @@ function handleNextButtonClick() {
     }
 }
 
-function submitForm() {
+async function submitForm() {
     console.log(formData); // For debugging
-    // Send formData to your backend or AI service
-    fetch('/api/getRecommendations', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-    })
-    .then(response => response.json())
-    .then(recommendations => {
-        console.log(recommendations);
-        // Display recommendations to the user
-        // You can redirect to another page or update the current page's content
-    })
-    .catch(error => {
-        console.error('Error:', error);
+    const suggestions = await fetchDestinationSuggestions(formData);
+    console.log('Destination Suggestions:', suggestions);
+
+    // Filter and rank destinations based on user preferences
+    const rankedDestinations = filterAndRankDestinations(suggestions, formData);
+
+    // Generate and display the itinerary for the top-ranked destination
+    const itinerary = generateItinerary(rankedDestinations[0], formData);
+    displayItinerary(itinerary);
+}
+
+function filterAndRankDestinations(destinations, preferences) {
+    // Implement your filtering and ranking algorithm here
+    // Consider family-friendly, couple activities, kids' age range, pets, and budget
+    return destinations;
+}
+
+function generateItinerary(destination, preferences) {
+    // Generate a simple itinerary based on the destination and user preferences
+    const itinerary = [
+        { day: 1, activity: `Arrive in ${destination.name}` },
+        { day: 2, activity: `Explore ${preferences['What activities do you like?'][0]}` },
+        { day: 3, activity: `Visit popular attractions in ${destination.name}` }
+        // Add more days and activities based on preferences and destination data
+    ];
+    return itinerary;
+}
+
+function displayItinerary(itinerary) {
+    questionContainer.innerHTML = '<h2>Your Itinerary</h2>';
+    itinerary.forEach(dayPlan => {
+        const dayElement = document.createElement('div');
+        dayElement.textContent = `Day ${dayPlan.day}: ${dayPlan.activity}`;
+        questionContainer.appendChild(dayElement);
     });
 }
 
