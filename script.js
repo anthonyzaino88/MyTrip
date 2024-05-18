@@ -53,7 +53,8 @@ const questions = [
     {
         question: "If yes, what are their age ranges?",
         type: "multi-select",
-        options: ["0-2", "3-5", "6-9", "10-12", "13-17"]
+        options: ["0-2", "3-5", "6-9", "10-12", "13-17"],
+        condition: (answers) => answers['Do you have kids traveling with you?'] === 'yes'
     },
     {
         question: "Do you have pets traveling with you?",
@@ -70,6 +71,10 @@ const formData = {};
 
 function loadQuestion() {
     const currentQuestion = questions[currentQuestionIndex];
+    if (currentQuestion.condition && !currentQuestion.condition(formData)) {
+        currentQuestionIndex++;
+        return loadQuestion();
+    }
     questionContainer.style.opacity = 0;
 
     setTimeout(() => {
@@ -209,11 +214,14 @@ function filterAndRankDestinations(destinations, preferences) {
 }
 
 function generateItinerary(destination, preferences) {
-    // Generate a simple itinerary based on the destination and user preferences
+    // Generate a detailed itinerary based on the destination and user preferences
     const itinerary = [
         { day: 1, activity: `Arrive in ${destination.name}` },
         { day: 2, activity: `Explore ${preferences['What activities do you like?'][0]}` },
-        { day: 3, activity: `Visit popular attractions in ${destination.name}` }
+        { day: 3, activity: `Visit popular attractions in ${destination.name}` },
+        { day: 4, activity: `Breakfast at a local cafe`, meal: 'breakfast' },
+        { day: 4, activity: `Lunch at a recommended restaurant`, meal: 'lunch' },
+        { day: 4, activity: `Dinner at a gourmet restaurant`, meal: 'dinner' }
         // Add more days and activities based on preferences and destination data
     ];
     return itinerary;
@@ -223,7 +231,7 @@ function displayItinerary(itinerary) {
     questionContainer.innerHTML = '<h2>Your Itinerary</h2>';
     itinerary.forEach(dayPlan => {
         const dayElement = document.createElement('div');
-        dayElement.textContent = `Day ${dayPlan.day}: ${dayPlan.activity}`;
+        dayElement.textContent = `Day ${dayPlan.day}: ${dayPlan.activity} (${dayPlan.meal || 'activity'})`;
         questionContainer.appendChild(dayElement);
     });
 }
