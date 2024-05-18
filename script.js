@@ -169,7 +169,14 @@ async function fetchDestinationSuggestions(formData, retries = 3) {
         return response.data.data;
     } catch (error) {
         console.error('Error fetching destination suggestions:', error);
-        if (retries > 0) {
+        
+        if (error.response && error.response.status === 429) {
+            // Rate limit error, wait and retry
+            const retryAfter = parseInt(error.response.headers['retry-after'], 10) || 5;
+            console.log(`Rate limited. Retrying after ${retryAfter} seconds...`);
+            await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+            return fetchDestinationSuggestions(formData, retries - 1);
+        } else if (retries > 0) {
             console.log(`Retrying... (${3 - retries + 1})`);
             return fetchDestinationSuggestions(formData, retries - 1);
         } else {
