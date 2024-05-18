@@ -149,7 +149,7 @@ async function getAmadeusAccessToken() {
     }
 }
 
-async function fetchDestinationSuggestions(formData) {
+async function fetchDestinationSuggestions(formData, retries = 3) {
     if (!amadeusAccessToken) {
         amadeusAccessToken = await getAmadeusAccessToken();
     }
@@ -169,7 +169,13 @@ async function fetchDestinationSuggestions(formData) {
         return response.data.data;
     } catch (error) {
         console.error('Error fetching destination suggestions:', error);
-        return [];
+        if (retries > 0) {
+            console.log(`Retrying... (${3 - retries + 1})`);
+            return fetchDestinationSuggestions(formData, retries - 1);
+        } else {
+            alert("We're experiencing issues with our server. Please try again later.");
+            return [];
+        }
     }
 }
 
