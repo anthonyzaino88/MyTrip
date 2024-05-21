@@ -1,11 +1,32 @@
 // formHandler.js
 
-const AMADEUS_API_KEY = 'V0d0bW6lNEjP6sMxGZAjvb9hifr0ZoBk'; // Replace with your Amadeus API key
-const AMADEUS_API_SECRET = 'sSFQnKiQDxHa5cUB'; // Replace with your Amadeus API secret
+const AMADEUS_API_KEY = 'V0d0bW6lNEjP6sMxGZAjvb9hifr0ZoBk'; //  Amadeus API key
+const AMADEUS_API_SECRET = 'sSFQnKiQDxHa5cUB'; //  Amadeus API secret
 let amadeusAccessToken = '';
 
 
 const questions = [
+    {
+        question: "Do you have any preferred destinations?",
+        type: "text",
+        placeholder: "e.g., Paris, Tokyo"
+    },
+    {
+        question: "Who are you traveling with?",
+        type: "select",
+        options: ["Solo", "Couple", "Family", "Friends"]
+    },
+    {
+        question: "Do you have kids traveling with you?",
+        type: "select",
+        options: ["Yes", "No"]
+    },
+    {
+        question: "If yes, what are their age ranges?",
+        type: "multi-select",
+        options: ["0-2", "3-5", "6-9", "10-12", "13-17"],
+        condition: (answers) => answers['Do you have kids traveling with you?'] === 'yes'
+    },
     {
         question: "What type of vacation are you looking for?",
         type: "select",
@@ -26,11 +47,7 @@ const questions = [
         type: "select",
         options: ["3 days", "5 days", "1 week", "2 weeks"]
     },
-    {
-        question: "Do you have any preferred destinations?",
-        type: "text",
-        placeholder: "e.g., Paris, Tokyo"
-    },
+    
     {
         question: "What are your travel dates?",
         type: "date-range"
@@ -40,22 +57,7 @@ const questions = [
         type: "text",
         placeholder: "e.g., Vegetarian, Vegan"
     },
-    {
-        question: "Who are you traveling with?",
-        type: "select",
-        options: ["Solo", "Couple", "Family", "Friends"]
-    },
-    {
-        question: "Do you have kids traveling with you?",
-        type: "select",
-        options: ["Yes", "No"]
-    },
-    {
-        question: "If yes, what are their age ranges?",
-        type: "multi-select",
-        options: ["0-2", "3-5", "6-9", "10-12", "13-17"],
-        condition: (answers) => answers['Do you have kids traveling with you?'] === 'yes'
-    },
+   
     {
         question: "Do you have pets traveling with you?",
         type: "select",
