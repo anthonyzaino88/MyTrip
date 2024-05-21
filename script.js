@@ -65,6 +65,7 @@ const questions = [
     }
 ];
 
+
 let currentQuestionIndex = 0;
 const formContainer = document.getElementById('form-container');
 const questionContainer = document.getElementById('question-container');
@@ -188,6 +189,34 @@ async function fetchDestinationSuggestions(formData, retries = 3) {
     }
 }
 
+async function fetchActivities(destination, formData) {
+    // Placeholder for actual API call to fetch activities based on destination and preferences
+    return [
+        { name: "Popular Attraction 1", type: "attraction" },
+        { name: "Popular Attraction 2", type: "attraction" },
+        { name: "Popular Attraction 3", type: "attraction" }
+    ];
+}
+
+async function fetchDiningOptions(destination, formData) {
+    // Placeholder for actual API call to fetch dining options based on destination and preferences
+    return [
+        { name: "Restaurant 1", type: "dining" },
+        { name: "Restaurant 2", type: "dining" }
+    ];
+}
+
+async function fetchHotelOptions(destination, formData) {
+    // Placeholder for actual API call to fetch hotel options based on destination, preferences, and budget
+    return [
+        { name: "Hotel 1", type: "hotel" },
+        { name: "Hotel 2", type: "hotel" },
+        { name: "Hotel 3", type: "hotel" },
+        { name: "Hotel 4", type: "hotel" },
+        { name: "Hotel 5", type: "hotel" }
+    ];
+}
+
 function handleNextButtonClick() {
     const currentQuestion = questions[currentQuestionIndex];
     const answer = document.querySelector(`[name="${currentQuestionIndex}"]`)?.value ||
@@ -215,30 +244,29 @@ async function submitForm() {
         return;
     }
 
-    // Filter and rank destinations based on user preferences
-    const rankedDestinations = filterAndRankDestinations(suggestions, formData);
+    // Assuming the first suggestion is the most relevant one
+    const destination = suggestions[0];
 
-    // Generate and display the itinerary for the top-ranked destination
-    const itinerary = generateItinerary(rankedDestinations[0], formData);
+    // Fetch activities, dining options, and hotel options based on the destination and form data
+    const activities = await fetchActivities(destination, formData);
+    const diningOptions = await fetchDiningOptions(destination, formData);
+    const hotelOptions = await fetchHotelOptions(destination, formData);
+
+    // Display the itinerary
+    const itinerary = generateItinerary(destination, activities, diningOptions, hotelOptions, formData);
     displayItinerary(itinerary);
 }
 
-function filterAndRankDestinations(destinations, preferences) {
-    // Implement your filtering and ranking algorithm here
-    // Consider family-friendly, couple activities, kids' age range, pets, and budget
-    return destinations;
-}
-
-function generateItinerary(destination, preferences) {
-    // Generate a detailed itinerary based on the destination and user preferences
+function generateItinerary(destination, activities, diningOptions, hotelOptions, preferences) {
+    // Generate a detailed itinerary based on the destination, activities, dining options, hotel options, and user preferences
     const itinerary = [
         { day: 1, activity: `Arrive in ${destination.name}` },
-        { day: 2, activity: `Explore ${preferences['What activities do you like?'][0]}` },
-        { day: 3, activity: `Visit popular attractions in ${destination.name}` },
-        { day: 4, activity: `Breakfast at a local cafe`, meal: 'breakfast' },
-        { day: 4, activity: `Lunch at a recommended restaurant`, meal: 'lunch' },
-        { day: 4, activity: `Dinner at a gourmet restaurant`, meal: 'dinner' }
-        // Add more days and activities based on preferences and destination data
+        { day: 2, activity: `Explore ${activities[0].name}` },
+        { day: 3, activity: `Visit ${activities[1].name}` },
+        { day: 4, activity: `Enjoy ${activities[2].name}` },
+        { day: 5, activity: `Breakfast at ${diningOptions[0].name}`, meal: 'breakfast' },
+        { day: 5, activity: `Lunch at ${diningOptions[1].name}`, meal: 'lunch' },
+        { day: 5, activity: `Stay at ${hotelOptions[0].name}`, meal: 'dinner' }
     ];
     return itinerary;
 }
