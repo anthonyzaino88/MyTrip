@@ -190,14 +190,33 @@ async function fetchDestinationSuggestions(formData, retries = 3) {
 }
 
 async function fetchActivities(destination, formData) {
-    // Placeholder for actual API call to fetch activities based on destination and preferences
-    return [
-        { name: "Popular Attraction 1", type: "attraction" },
-        { name: "Popular Attraction 2", type: "attraction" },
-        { name: "Popular Attraction 3", type: "attraction" }
-    ];
-}
+    if (!amadeusAccessToken) {
+        amadeusAccessToken = await getAmadeusAccessToken();
+    }
 
+    try {
+        const response = await axios.get('https://test.api.amadeus.com/v1/reference-data/locations/pois', {
+            params: {
+                latitude: destination.geoCode.latitude,
+                longitude: destination.geoCode.longitude,
+                radius: 10,
+                categories: 'SIGHTS',
+                'page[limit]': 3
+            },
+            headers: {
+                Authorization: `Bearer ${amadeusAccessToken}`
+            }
+        });
+
+        return response.data.data.map(poi => ({
+            name: poi.name,
+            type: poi.category
+        }));
+    } catch (error) {
+        console.error('Error fetching activities:', error);
+        return [];
+    }
+}
 async function fetchDiningOptions(destination, formData) {
     // Placeholder for actual API call to fetch dining options based on destination and preferences
     return [
@@ -252,32 +271,46 @@ async function submitForm() {
     const diningOptions = await fetchDiningOptions(destination, formData);
     const hotelOptions = await fetchHotelOptions(destination, formData);
 
-    // Display the itinerary
+    // Generate and display the itinerary
     const itinerary = generateItinerary(destination, activities, diningOptions, hotelOptions, formData);
     displayItinerary(itinerary);
 }
 
 function generateItinerary(destination, activities, diningOptions, hotelOptions, preferences) {
-    // Generate a detailed itinerary based on the destination, activities, dining options, hotel options, and user preferences
-    const itinerary = [
-        { day: 1, activity: `Arrive in ${destination.name}` },
-        { day: 2, activity: `Explore ${activities[0].name}` },
-        { day: 3, activity: `Visit ${activities[1].name}` },
-        { day: 4, activity: `Enjoy ${activities[2].name}` },
-        { day: 5, activity: `Breakfast at ${diningOptions[0].name}`, meal: 'breakfast' },
-        { day: 5, activity: `Lunch at ${diningOptions[1].name}`, meal: 'lunch' },
-        { day: 5, activity: `Stay at ${hotelOptions[0].name}`, meal: 'dinner' }
-    ];
+    const days = parseInt(preferences['How long is your trip?'].split(' ')[0]);
+    const itinerary = [];
+
+    for (let i = 0; i < days; i++) {
+        itinerary.push({ day: i + 1, activity: activities[i % activities.length].name });
+        itinerary.push({ day: i + 1, activity: `Breakfast at ${diningOptions[0].name}`, meal: 'breakfast' });
+        itinerary.push({ day: i + 1, activity: `Lunch at ${diningOptions[1].name}`, meal: 'lunch' });
+        itinerary.push({ day: i + 1, activity: `Dinner at ${diningOptions[0].name}`, meal: 'dinner' });
+        itinerary.push({ day: i + 1, activity: `Stay at ${hotelOptions[i % hotelOptions.length].name}`, meal: 'hotel' });
+    }
     return itinerary;
 }
 
 function displayItinerary(itinerary) {
     questionContainer.innerHTML = '<h2>Your Itinerary</h2>';
-    itinerary.forEach(dayPlan => {
-        const dayElement = document.createElement('div');
-        dayElement.textContent = `Day ${dayPlan.day}: ${dayPlan.activity} (${dayPlan.meal || 'activity'})`;
-        questionContainer.appendChild(dayElement);
+    const daysMap = {};
+
+    itinerary.forEach(item => {
+        if (!daysMap[item.day]) {
+            daysMap[item.day] = [];
+        }
+        daysMap[item.day].push(item);
     });
+
+    for (const day in daysMap) {
+        const dayElement = document.createElement('div');
+        dayElement.innerHTML = `<h3>Day ${day}</h3>`;
+        daysMap[day].forEach(dayPlan => {
+            const activityElement = document.createElement('div');
+            activityElement.textContent = `${dayPlan.activity} (${dayPlan.meal || 'activity'})`;
+            dayElement.appendChild(activityElement);
+        });
+        questionContainer.appendChild(dayElement);
+    }
 }
 
 nextButton.addEventListener('click', handleNextButtonClick);
